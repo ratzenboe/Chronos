@@ -3,6 +3,8 @@ from ml_fitting.DataManager import PhotManager
 from utils.utils import chunks
 import multiprocessing
 from numba import jit
+import copy
+from scipy.stats import triang
 
 
 # @jit(nopython=True)
@@ -56,9 +58,27 @@ class Distance(PhotManager):
         self.is_not_nan = np.isnan(self.data_hrd).sum(axis=1) == 0
         self.data_hrd = self.data_hrd[self.is_not_nan]
         self.data_e_hrd = self.data_e_hrd[self.is_not_nan]
+        # bootstrap data
+        self.fit_data = {'hrd': copy.deepcopy(self.data_hrd), 'hrd_err': copy.deepcopy(self.data_e_hrd)}
+        self.index_subset = np.arange(self.data_hrd.shape[0])
+
+    def bootstrap(self, bootstrap_frac: float, p: bool = True):
+        if p:
+            mg = self.data_hrd[:, 1]
+            p = triang(c=0, loc=np.min(mg), scale=np.ptp(mg)).pdf(mg)
+            p /= np.sum(p)
+        else:
+            p = None
+        self.index_subset = np.random.choice(
+            self.is_not_nan.sum(), int(bootstrap_frac * self.is_not_nan.sum()),
+            replace=True, p=p
+        )
+        self.fit_data['hrd'] = copy.deepcopy(self.data_hrd[self.index_subset])
+        self.fit_data['hrd_err'] = copy.deepcopy(self.data_e_hrd[self.index_subset])
+        return
 
     def nearest_points(self, iso_coords):
-        return lineseg_dists(self.data_hrd, iso_coords[1:], iso_coords[:-1])
+        return lineseg_dists(self.fit_data['hrd'], iso_coords[1:], iso_coords[:-1])
 
     def get_distances_chunk(self, isochrone_coords, ages, metals, avs, indices):
         """Calculate nearest distance to isochrone for data chunk"""
@@ -69,7 +89,7 @@ class Distance(PhotManager):
                 {
                     # 'color_dist': self.data_hrd[:, 0] - near_pt_on_isochrone[:, 0],
                     # 'mag_g_dist': self.data_hrd[:, 1] - near_pt_on_isochrone[:, 1],
-                    'iso_data_dists': self.data_hrd - near_pt_on_isochrone,
+                    'iso_data_dists': self.fit_data['hrd'] - near_pt_on_isochrone,
                     'near_pts': near_pt_on_isochrone,
                     'age': ages[idx],
                     'metal': metals[idx],
@@ -96,7 +116,7 @@ class Distance(PhotManager):
 
     def distance_isochrone_data_single(self, iso_coords):
         near_pt_on_isochrone = self.nearest_points(iso_coords)
-        distance_iso_pts = self.data_hrd - near_pt_on_isochrone
+        distance_iso_pts = self.fit_data['hrd'] - near_pt_on_isochrone
         return distance_iso_pts
 
     def signed_distances_single(self, iso_coords):

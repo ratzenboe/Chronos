@@ -1,6 +1,7 @@
 import numpy as np
 import pandas as pd
 from isochrone.PARSEC import PARSEC
+from isochrone.Baraffe15 import Baraffe15
 from ml_fitting.Distances import Distance
 from utils.utils import isin_range
 import multiprocessing
@@ -9,9 +10,14 @@ from skopt import gp_minimize
 
 
 class ChronosML:
-    def __init__(self, data, isochrone_files_base_path, file_ending, use_grp=False, **kwargs):
+    def __init__(self, data, isochrone_files_base_path, file_ending, models='parsec', use_grp=False, **kwargs):
         self.use_grp = use_grp
-        self.isochrone_handler = PARSEC(isochrone_files_base_path, file_ending=file_ending)
+        # Check for Baraffe15 isochrones
+        if ('baraffe' in models.lower()) or ('bhac' in models.lower()):
+            self.isochrone_handler = Baraffe15(isochrone_files_base_path, file_ending=file_ending)
+        # Fail save is always PARSEC isochrones
+        else:
+            self.isochrone_handler = PARSEC(isochrone_files_base_path, file_ending=file_ending)
         self.distance_handler = Distance(use_grp=use_grp, data=data, **kwargs)
         self.fitting_kwargs = dict(
             frac_lts=0.8, fit_range=(-2, 10), bootstrap_frac=0.8, do_mass_normalize=True, weights=None
@@ -49,42 +55,19 @@ class ChronosML:
         av_range = (0, 3)
         return logAge_range, feh_range, av_range
 
-    def minimize_lts(self, distances_vec, weights, seed=None):
-        dist_color, dist_magg = distances_vec.T
-        # Divide by errors
-        dist_color /= self.distance_handler.data_e_hrd[:, 0]
-        dist_magg /= self.distance_handler.data_e_hrd[:, 1]
-        # Square values and add weight influence
-        dist_total = dist_color**2 + dist_magg**2
-        if isinstance(self.fitting_kwargs['bootstrap_frac'], (int, float, np.float)):
-            np.random.seed(seed=seed)
-            index_subset = np.random.choice(
-                dist_total.size, int(self.fitting_kwargs['bootstrap_frac']*dist_total.size), replace=True
-            )
-            dist_total = dist_total[index_subset]
-            weights = weights[index_subset]
-            # Remove values outside of range
-            isin_magg_range = isin_range(
-                self.distance_handler.data_hrd[:, 1][index_subset],
-                *self.fitting_kwargs['fit_range']
-            )
-        else:
-            isin_magg_range = isin_range(self.distance_handler.data_hrd[:, 1], *self.fitting_kwargs['fit_range'])
-        # Get final distances
-        dist_total = dist_total[isin_magg_range]
-        # LTS fitting: remove 1-frac_lts worst
-        keep_n = int(np.sum(isin_magg_range) * self.fitting_kwargs['frac_lts'])
-        argsorted_lts = np.argsort(dist_total)
-        dists_weighted = dist_total * weights[isin_magg_range]
-        dist_lts = dists_weighted[argsorted_lts][:keep_n]
-        return dist_lts
+    def keep_data(self, iso_coords):
+        iso_range = np.min(iso_coords[:, 1]), np.max(iso_coords[:, 1])
+        isin_magg_range = isin_range(self.distance_handler.fit_data['hrd'][:, 1], *self.fitting_kwargs['fit_range'])
+        isin_iso_range = isin_range(self.distance_handler.fit_data['hrd'][:, 1], *iso_range)
+        keep2fit = isin_magg_range & isin_iso_range
+        return keep2fit
 
     def isochrone_data_distances(self, x, seed=None):
         logAge, feh, A_V = x
         iso_coords = self.isochrone_handler.model(logAge=logAge, feh=feh, A_V=A_V, g_rp=self.use_grp)
         # Compute distances to isochrone
         near_pt_on_isochrone = self.distance_handler.nearest_points(iso_coords)
-        distances_vec = self.distance_handler.data_hrd - near_pt_on_isochrone
+        distances_vec = self.distance_handler.fit_data['hrd'] - near_pt_on_isochrone
         weights = np.ones(distances_vec.shape[0])
         if self.fitting_kwargs['do_mass_normalize']:
             # Compute masses from nearest points on isochrone
@@ -96,7 +79,21 @@ class ChronosML:
             weights *= self.fitting_kwargs['weights'][self.distance_handler.is_not_nan]
 
         # Minimize distance between photometric measurements and isochrones
-        dist_lts = self.minimize_lts(distances_vec, weights, seed)
+        dist_color, dist_magg = distances_vec.T
+        # Divide by errors
+        dist_color /= self.distance_handler.fit_data['hrd_err'][:, 0]
+        dist_magg /= self.distance_handler.fit_data['hrd_err'][:, 1]
+        # Square values and add weight influence
+        dist_total = dist_color**2 + dist_magg**2
+        # -- remove points outside range --
+        keep2fit = self.keep_data(iso_coords)
+        # Get final distances
+        dist_total = dist_total[keep2fit]
+        # LTS fitting: remove 1-frac_lts worst
+        keep_n = int(np.sum(keep2fit) * self.fitting_kwargs['frac_lts'])
+        argsorted_lts = np.argsort(dist_total)
+        dists_weighted = dist_total * weights[keep2fit]
+        dist_lts = dists_weighted[argsorted_lts][:keep_n]
         return np.sum(dist_lts)
 
     def fit(self, **kwargs):
