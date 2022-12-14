@@ -74,7 +74,8 @@ class ChronosMixModel:
         if scale_binscale_range is None:
             scale_binscale_range = (0.8, 1.1)
         # Set bounds variable
-        self.bounds = (logAge_range, feh_range, av_range, loc_diff_range, scale_single_range, scale_binaries_range)
+        self.bounds = (logAge_range, feh_range, av_range,
+                       loc_diff_range, scale_single_range, scale_binaries_range, scale_binscale_range)
         return
 
     def set_fitting_kwargs(self, fit_range=(-2, 10), do_mass_normalize=True, weights=None):
