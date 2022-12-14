@@ -55,7 +55,7 @@ class ChronosMixModel:
         self.distance_handler = Distance(use_grp=use_grp, data=data, **kwargs)
 
     def set_bounds(self, logAge_range=None, feh_range=None, av_range=None,
-                   loc_diff_range=None, scale_single_range=None, scale_binaries_range=None):
+                   loc_diff_range=None, scale_single_range=None, scale_binaries_range=None, scale_binscale_range=None):
         if logAge_range is None:
             logAge_range = (np.min(self.isochrone_handler.unique_ages), np.max(self.isochrone_handler.unique_ages))
         if feh_range is None:
@@ -71,6 +71,8 @@ class ChronosMixModel:
             scale_single_range = (0.01, 0.3)
         if scale_binaries_range is None:
             scale_binaries_range = (0.01, 0.1)
+        if scale_binscale_range is None:
+            scale_binscale_range = (0.8, 1.1)
         # Set bounds variable
         self.bounds = (logAge_range, feh_range, av_range, loc_diff_range, scale_single_range, scale_binaries_range)
         return
@@ -85,14 +87,11 @@ class ChronosMixModel:
         feh_range = (np.min(self.isochrone_handler.unique_metallicity), np.max(self.isochrone_handler.unique_metallicity))
         av_range = (0, 3)
         # Set ranges on binary parameters
-        # loc_diff_range = (0.05, 0.25)
-        # scale_single_range = (0.01, 0.3)
-        # scale_binaries_range = (0.01, 0.1)
-        # -- updated ranges --
         loc_diff_range = (0.095, 0.105)
         scale_single_range = (0.01, 0.15)
         scale_binaries_range = (0.055, 0.07)
-        return logAge_range, feh_range, av_range, loc_diff_range, scale_single_range, scale_binaries_range
+        scale_binscale_range = (0.8, 1.1)
+        return logAge_range, feh_range, av_range, loc_diff_range, scale_single_range, scale_binaries_range, scale_binscale_range
 
     def keep_data(self, iso_coords):
         isin_magg_range = isin_range(self.distance_handler.fit_data['hrd'][:, 1], *self.fitting_kwargs['fit_range'])
@@ -110,7 +109,7 @@ class ChronosMixModel:
     #     sign_magg = -np.sign(dist_magg)
 
     def isochrone_data_distances(self, x):
-        logAge, feh, A_V, loc_diff, scale_single, scale_binaries = x
+        logAge, feh, A_V, loc_diff, scale_single, scale_binaries, c_binary_func = x
         iso_coords = self.isochrone_handler.model(logAge=logAge, feh=feh, A_V=A_V, g_rp=self.use_grp)
         # Compute distances to isochrone
         near_pt_on_isochrone = self.distance_handler.nearest_points(iso_coords)
@@ -143,7 +142,7 @@ class ChronosMixModel:
             loc_diff=loc_diff,
             scale_single=scale_single,
             scale_binaries=scale_binaries,
-            p_t=binary_fraction(masses[keep2fit])
+            p_t=binary_fraction(masses[keep2fit], scale=c_binary_func)
         )
         return ll
 
