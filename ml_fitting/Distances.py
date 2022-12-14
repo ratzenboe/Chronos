@@ -63,9 +63,14 @@ class Distance(PhotManager):
         self.index_subset = np.arange(self.data_hrd.shape[0])
 
     def bootstrap(self, bootstrap_frac: float, p: bool = True):
-        if p:
-            mg = self.data_hrd[:, 1]
-            p = triang(c=0, loc=np.min(mg), scale=np.ptp(mg)).pdf(mg)
+        if isinstance(p, bool):
+            if p:
+                mg = self.data_hrd[:, 1]
+                p = triang(c=0, loc=np.min(mg), scale=np.ptp(mg)).pdf(mg)
+                p /= np.sum(p)
+            else:
+                p = None
+        elif isinstance(p, np.ndarray):
             p /= np.sum(p)
         else:
             p = None
