@@ -26,7 +26,13 @@ def binary_fraction(mass, scale=1):
     """For now c_0 & c_1 are fixed. Model fit to data from Duchêne+2013"""
     c_0 = 0.38
     c_1 = 0.33
-    return scale*(c_0 * mass**c_1)
+    bi_frac = scale * (c_0 * mass ** c_1)
+    if isinstance(bi_frac, np.ndarray):
+        bi_frac[bi_frac >= 0.95] = 0.95
+    else:
+        if bi_frac >= 0.95:
+            bi_frac = 0.95
+    return bi_frac
 
 
 class ChronosMixModel:
@@ -96,7 +102,12 @@ class ChronosMixModel:
         return keep2fit
 
     def bootstrap(self, bootstrap_frac: float, p: bool = True):
+        """Wrapper function for easier"""
         self.distance_handler.bootstrap(bootstrap_frac, p)
+
+    # def determine_sign(self, masses, dist_color, dist_magg):
+    #     sign_color = np.sign(dist_color)
+    #     sign_magg = -np.sign(dist_magg)
 
     def isochrone_data_distances(self, x):
         logAge, feh, A_V, loc_diff, scale_single, scale_binaries = x
