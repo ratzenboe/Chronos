@@ -127,18 +127,3 @@ class Distance(PhotManager):
     def signed_distances_single(self, iso_coords):
         distance_iso_pts = self.distance_isochrone_data_single(iso_coords)
         return np.sign(distance_iso_pts[:, 0]) * np.linalg.norm(distance_iso_pts, axis=1)
-
-    # @staticmethod
-    # def pnt_dist(arr, line):
-    #     return nearest_points(line, geom.Point(arr[0], arr[1]))[0].coords[0]
-    #
-    # def nearest_point_shapely(self, isochrone_coords):
-    #     """Make precise calculations for points which do not fulfill the 2 neighbors criterium
-    #     Use nearest_points function from geom -> Quite slow but only applied to a few points
-    #     :param data_hrd: Numpy data w/ shape=(n_points, 2): Features color, mag
-    #     :param isochrone_coords: Points sampled on isochrone; shape=(n_points, 2): Frist features bp_rp, second mag_g
-    #     :return: Nearest point on isochrone (also between 2 points)
-    #     """
-    #     line = geom.LineString(isochrone_coords)
-    #     near_pts = np.apply_along_axis(self.pnt_dist, 1, self.data_hrd, line)
-    #     return near_pts

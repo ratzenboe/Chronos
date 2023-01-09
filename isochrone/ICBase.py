@@ -15,8 +15,8 @@ corr_grp = corr_Gmag - corr_RPmag
 class ICBase:
     def __init__(self, nb_interpolated=400):
         self.abs_g = 'Gmag'
-        self.bp_rp = 'BP_RP'
-        self.g_rp = 'G_RP'
+        self.bp_rp = 'color_BP_RP'
+        self.g_rp = 'color_G_RP'
         # self.ccmd = ''
         self.nb_interpolation = nb_interpolated
         self.mass_grid = np.arange(nb_interpolated)

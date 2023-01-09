@@ -74,7 +74,8 @@ class Baraffe15(ICBase):
                 if line.startswith(self.baraffe_colnames['age_start']):
                     line = re.sub(r'\t', ' ', line)  # remove tabs
                     age = float(re.findall("\d+\.\d+", line)[0])
-                    logAge_info.append(np.log10(age * 10 ** 9))
+                    logAge = np.round(np.log10(age * 10**9), decimals=2)
+                    logAge_info.append(logAge)
                     # Save infos
                     if len(line_info) > 0:
                         counter = 0
@@ -93,11 +94,11 @@ class Baraffe15(ICBase):
         df_iso[self.baraffe_colnames['metal']] = -0.1
         df_iso_1 = copy.deepcopy(df_iso)
         df_iso_1[self.baraffe_colnames['metal']] = 0.1
-        df_iso = pd.concat([df_iso, df_iso_1])
+        data = pd.concat([df_iso, df_iso_1])
         # --- Compute colors ---
-        df_iso[self.g_rp] = df_iso[self.baraffe_colnames['gmag']] - df_iso[self.baraffe_colnames['rp']]
-        df_iso[self.bp_rp] = df_iso[self.baraffe_colnames['bp']] - df_iso[self.baraffe_colnames['rp']]
-        return df_iso
+        data[self.g_rp] = data[self.baraffe_colnames['gmag']] - data[self.baraffe_colnames['rp']]
+        data[self.bp_rp] = data[self.baraffe_colnames['bp']] - data[self.baraffe_colnames['rp']]
+        return data
 
     def remove_massive_end(self, df_iso):
         """Remove high mass end and mass decline (both cases can't be confidently fit to Gaia data)"""
