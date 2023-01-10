@@ -65,13 +65,18 @@ class RansacIsochrone:
         x1_y1, x2_y2 = np.square(points - self.closest_point_on_isochrone_and_binary(points, isochrone)).T
         # Get standard deviations
         std_x1, std_y1 = std_devs.T
+        # Compute Mahalanobolis distance
+        # dists = np.sqrt((x1_y1 / std_x1 ** 2) + (x2_y2 / std_y1 ** 2))
+        dists = np.sqrt((x1_y1 / std_x1) + (x2_y2 / std_y1))
         # Compute N sigma radius
-        is_still_inside = np.sqrt(x1_y1 / std_x1**2 + x2_y2 / std_y1**2) < self.n_sigma_distance(n_sigma)
+        is_still_inside = dists < self.n_sigma_distance(n_sigma)
         return is_still_inside
 
     def fit(self, isochrone, points, std_devs, n_sigma=3):
         # check if points are inside main isochrone and binary isochrone
         is_inside = self.is_inside_main_and_binaries(points, isochrone)
         # check if points are inside N sigma radius
-        is_inside &= self.is_inside_Nsigma_radius(points, std_devs, isochrone, n_sigma=n_sigma)
-        return is_inside
+        is_still_inside = self.is_inside_Nsigma_radius(points, std_devs, isochrone, n_sigma=n_sigma)
+        # combine both conditions
+        is_still_inside = is_still_inside | is_inside
+        return is_still_inside

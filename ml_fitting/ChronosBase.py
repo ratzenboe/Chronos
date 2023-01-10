@@ -18,7 +18,7 @@ class ChronosBase:
             self.isochrone_handler = PARSEC(isochrone_files_base_path, file_ending=file_ending)
         self.distance_handler = Distance(use_grp=use_grp, data=data, **kwargs)
         self.fitting_kwargs = dict(
-            fit_range=(-2, 10), do_mass_normalize=True, weights=None
+            fit_range=(-2, 10), do_mass_normalize=False, weights=None
         )
         self.bounds = self.auto_bounds()
         self.kroupa_imf = imf.Kroupa()
@@ -61,6 +61,31 @@ class ChronosBase:
         isin_iso_range = isin_range(self.distance_handler.fit_data['hrd'][:, 1], *iso_range)
         keep2fit = isin_magg_range & isin_iso_range
         return keep2fit
+
+    def compute_fit_info(self, logAge, feh, A_V, g_rp, signed_distance=False):
+        """Calculate the Mahanobolis distance to an isochrone"""
+        # Get isochrone
+        iso_coords = self.isochrone_handler.model(logAge, feh, A_V, g_rp=g_rp)
+        # Get the distance to the isochrone
+        near_pt_on_isochrone = self.distance_handler.nearest_points(iso_coords)
+        distances_vec = self.distance_handler.fit_data['hrd'] - near_pt_on_isochrone
+        # Minimize distance between photometric measurements and isochrones
+        dist_color, dist_magg = distances_vec.T
+        # Divide by errors
+        if not signed_distance:
+            # Don't want signed distance to be penalized
+            dist_color /= self.distance_handler.fit_data['hrd_err'][:, 0]
+            dist_magg /= self.distance_handler.fit_data['hrd_err'][:, 1]
+        # Square values and add weight influence
+        dist_total = np.sqrt(dist_color**2 + dist_magg**2)
+        if signed_distance:
+            dist_total *= np.sign(dist_color)
+        # Compute mass
+        masses = self.isochrone_handler.compute_mass(near_pt_on_isochrone, logAge, feh, A_V, g_rp)
+        # compute points to fit
+        keep2fit = self.keep_data(iso_coords)
+        # Return the total distance
+        return dist_total, masses, keep2fit
 
     def fit(self, **kwargs):
         # Define defaults

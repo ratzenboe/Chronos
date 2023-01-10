@@ -1,5 +1,5 @@
 import numpy as np
-from ChronosBase import ChronosBase
+from ml_fitting.ChronosBase import ChronosBase
 from ml_fitting.RANSAC import RansacIsochrone
 
 
@@ -14,13 +14,16 @@ class ChronosRANSAC(ChronosBase):
         self.optimize_function = self.count_inside
 
     def count_inside(self, x):
+        """Computes MSAC score
+        see https://de.wikipedia.org/wiki/RANSAC-Algorithmus#MSAC"""
         logAge, feh, A_V = x
         iso_coords = self.isochrone_handler.model(logAge=logAge, feh=feh, A_V=A_V, g_rp=self.use_grp)
+        dist_total, masses, keep2fit = self.compute_fit_info(
+            logAge=logAge, feh=feh, A_V=A_V, g_rp=self.use_grp, signed_distance=False
+        )
         # Points to fit
         points = self.distance_handler.fit_data['hrd']
         errors = self.distance_handler.fit_data['hrd_err']
-        # Keep only points in the isochrone range
-        keep2fit = self.keep_data(iso_coords)
         points = points[keep2fit]
         errors = errors[keep2fit]
         # Compute number of points inside isochrone and binary line
@@ -35,5 +38,15 @@ class ChronosRANSAC(ChronosBase):
             )
             # We multiply each distance by the inverse of its likelihood
             weights = 1 / self.kroupa_imf(masses)
-            # weights = self.kroupa_imf(masses)
-        return np.sum(weights[is_inside_lines])
+
+        # Compute MSAC (M-Estimator SAmple Consensus) score
+        # Score is the sum of the weights of the inliers
+        inlier_weighted_distances = dist_total[keep2fit][is_inside_lines]
+        limit = self.fitter.n_sigma_distance(4)  # Grow out to 4 sigma, then stop
+        capped_distances = np.where(inlier_weighted_distances < limit, inlier_weighted_distances, limit)
+        score = np.sum(capped_distances)    # * weights[is_inside_lines])  TODO: weights mess up fit, removed for now
+        # Plus the sum of increased weights of the outliers. Error score is constant for outliers
+        max_score = 10
+        nb_outliers = np.sum(~is_inside_lines)
+        score += nb_outliers * max_score
+        return score

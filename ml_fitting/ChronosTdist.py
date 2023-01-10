@@ -76,12 +76,10 @@ class ChronosTdist(ChronosBase):
 
     def isochrone_data_distances(self, x):
         logAge, feh, A_V, loc_diff, scale_single, scale_binaries, c_binary_func = x
-        iso_coords = self.isochrone_handler.model(logAge=logAge, feh=feh, A_V=A_V, g_rp=self.use_grp)
         # Compute distances to isochrone
-        near_pt_on_isochrone = self.distance_handler.nearest_points(iso_coords)
-        distances_vec = self.distance_handler.fit_data['hrd'] - near_pt_on_isochrone
-        # Compute masses from nearest points on isochrone
-        masses = self.isochrone_handler.compute_mass(near_pt_on_isochrone, logAge, feh, A_V, g_rp=self.use_grp)
+        dist_total, masses, keep2fit = self.compute_fit_info(
+            logAge=logAge, feh=feh, A_V=A_V, g_rp=self.use_grp, signed_distance=True
+        )
         # -- compute fitting weights --
         weights = np.ones_like(masses)
         if self.fitting_kwargs['do_mass_normalize']:
@@ -90,18 +88,6 @@ class ChronosTdist(ChronosBase):
             # weights = self.kroupa_imf(masses)
         if self.fitting_kwargs['weights'] is not None:
             weights *= self.fitting_kwargs['weights'][self.distance_handler.is_not_nan]
-        # weights = np.ones(distances_vec.shape[0])
-
-        # --- Minimize distance between photometric measurements and isochrones ---
-        dist_color, dist_magg = distances_vec.T
-        # Divide by errors
-        # dist_color /= self.distance_handler.data_e_hrd[:, 0]
-        # dist_magg /= self.distance_handler.data_e_hrd[:, 1]
-        # Square values and add weight influence
-        dist_total = np.sqrt(dist_color**2 + dist_magg**2) * np.sign(dist_color)
-        # Remove values outside range (use: M_G range)
-        # -- remove points outside range --
-        keep2fit = self.keep_data(iso_coords)
         # Compute
         ll = loglikelihood(
             x_data=dist_total[keep2fit],
