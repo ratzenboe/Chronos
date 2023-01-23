@@ -17,7 +17,7 @@ def loglikelihood(x_data, weights):
     return ll
 
 
-class ChronosTdist(ChronosBase):
+class ChronosSkewCauchy(ChronosBase):
     def __init__(self, data, isochrone_files_base_path, file_ending, **kwargs):
         # Initialize super class
         super().__init__(data, isochrone_files_base_path, file_ending, **kwargs)
