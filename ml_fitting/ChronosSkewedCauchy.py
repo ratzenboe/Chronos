@@ -25,7 +25,7 @@ class ChronosSkewCauchy(ChronosBase):
         self.optimize_function = self.isochrone_data_distances
 
     def isochrone_data_distances(self, x):
-        logAge, feh, A_V, loc_diff = x
+        logAge, feh, A_V = x
         # Compute distances to isochrone
         dist_total, masses, keep2fit = self.compute_fit_info(
             logAge=logAge, feh=feh, A_V=A_V, g_rp=self.use_grp, signed_distance=True
