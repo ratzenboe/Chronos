@@ -102,7 +102,7 @@ class ChronosSkewCauchyBayes(ChronosBase):
             pos[:, i] = np.random.uniform(self.bounds[i][0], self.bounds[i][1], nwalkers)
         # Set sampler
         # with Pool(processes=cpu_count()) as pool:
-        sampler = emcee.EnsembleSampler(nwalkers, ndim, self.log_probability) #, pool=pool)
+        sampler = emcee.EnsembleSampler(nwalkers, ndim, self.log_probability)  # pool=pool)
         # Run burn-in
         pos, prob, state = sampler.run_mcmc(pos, burnin)
         sampler.reset()
