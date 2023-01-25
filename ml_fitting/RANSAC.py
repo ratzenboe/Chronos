@@ -65,9 +65,11 @@ class RansacIsochrone:
         x1_y1, x2_y2 = np.square(points - self.closest_point_on_isochrone_and_binary(points, isochrone)).T
         # Get standard deviations
         std_x1, std_y1 = std_devs.T
+        # Underestimation correction
+        uc = 2
         # Compute Mahalanobolis distance
-        # dists = np.sqrt((x1_y1 / std_x1 ** 2) + (x2_y2 / std_y1 ** 2))
-        dists = np.sqrt((x1_y1 / std_x1) + (x2_y2 / std_y1))
+        dists = np.sqrt((x1_y1 / (uc * std_x1**2)) + (x2_y2 / (uc * std_y1**2)))
+        # dists = np.sqrt((x1_y1 / std_x1) + (x2_y2 / std_y1))
         # Compute N sigma radius
         is_still_inside = dists < self.n_sigma_distance(n_sigma)
         return is_still_inside

@@ -42,11 +42,11 @@ class ChronosRANSAC(ChronosBase):
         # Compute MSAC (M-Estimator SAmple Consensus) score
         # Score is the sum of the weights of the inliers
         inlier_weighted_distances = dist_total[keep2fit][is_inside_lines]
-        limit = self.fitter.n_sigma_distance(4)  # Grow out to 4 sigma, then stop
+        limit = self.fitter.n_sigma_distance(3)  # Grow out to 4 sigma, then stop
         capped_distances = np.where(inlier_weighted_distances < limit, inlier_weighted_distances, limit)
         score = np.sum(capped_distances)    # * weights[is_inside_lines])  TODO: weights mess up fit, removed for now
         # Plus the sum of increased weights of the outliers. Error score is constant for outliers
-        max_score = 10
+        max_score = limit**2
         nb_outliers = np.sum(~is_inside_lines)
         score += nb_outliers * max_score
         return score
