@@ -2,6 +2,7 @@ import numpy as np
 from ml_fitting.ChronosBase import ChronosBase
 from utils.utils import isin_range
 import scipy.stats as st
+from multiprocessing import Pool
 import emcee
 
 
@@ -99,12 +100,13 @@ class ChronosSkewCauchyBayes(ChronosBase):
         for i in range(ndim):
             pos[:, i] = np.random.uniform(self.bounds[i][0], self.bounds[i][1], nwalkers)
         # Set sampler
-        sampler = emcee.EnsembleSampler(nwalkers, ndim, self.log_probability)
-        # Run burn-in
-        pos, prob, state = sampler.run_mcmc(pos, burnin)
-        sampler.reset()
-        # Run MCMC
-        sampler.run_mcmc(pos, nsteps, progress=False)
+        with Pool() as pool:
+            sampler = emcee.EnsembleSampler(nwalkers, ndim, self.log_probability, pool=pool)
+            # Run burn-in
+            pos, prob, state = sampler.run_mcmc(pos, burnin)
+            sampler.reset()
+            # Run MCMC
+            sampler.run_mcmc(pos, nsteps)
         # Save samples
         samples = sampler.get_chain(flat=True)
         # Save best fit
