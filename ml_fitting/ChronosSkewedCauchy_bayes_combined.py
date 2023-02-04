@@ -84,11 +84,11 @@ class ChronosSkewCauchyBayesCombined(ChronosBaseCombined):
 
     def log_prior(self, theta):
         # Uniform priors
-        logAge, feh, A_V, skewness, scale = theta
+        logAge, feh, A_V, skewness, scale_bprp, scale_grp = theta
         logAge_range, feh_range, av_range, skewness_range, scale_range_bprp, scale_range_grp = self.bounds
         if isin_range(logAge, *logAge_range) and isin_range(feh, *feh_range) and isin_range(A_V, *av_range) and \
-                isin_range(skewness, *skewness_range) and isin_range(scale, *scale_range_bprp) and \
-                isin_range(scale, *scale_range_grp):
+                isin_range(skewness, *skewness_range) and isin_range(scale_bprp, *scale_range_bprp) and \
+                isin_range(scale_grp, *scale_range_grp):
             return 0.0
         return -np.inf
 
