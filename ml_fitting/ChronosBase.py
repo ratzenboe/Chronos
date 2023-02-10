@@ -5,21 +5,25 @@ from ml_fitting.Distances import Distance
 from utils.utils import isin_range
 import imf
 from skopt import gp_minimize
+import os
+
+data_path = '/home/sebastian/Documents/projects/Chronos/data/'
 
 
 class ChronosBase:
     def __init__(self, data, models='parsec', use_grp=False, **kwargs):
         self.use_grp = use_grp
-        # Check for Baraffe15 isochrones
-        if ('baraffe' in models.lower()) or ('bhac' in models.lower()):
-            self.isochrone_handler = Baraffe15('../data/baraffe_files/', file_ending='GAIA')
-        # Fail save is always PARSEC isochrones
-        else:
-            self.isochrone_handler = PARSEC('../data/parsec_files/', file_ending='dat')
-        self.distance_handler = Distance(use_grp=use_grp, data=data, **kwargs)
         self.fitting_kwargs = dict(
             fit_range=(-2, 10), do_mass_normalize=False, weights=None
         )
+        # Check for Baraffe15 isochrones
+        if ('baraffe' in models.lower()) or ('bhac' in models.lower()):
+            self.isochrone_handler = Baraffe15(os.path.join(data_path, 'baraffe_files'), file_ending='GAIA')
+            self.fitting_kwargs['fit_range'] = (-2, 12)
+        # Fail save is always PARSEC isochrones
+        else:
+            self.isochrone_handler = PARSEC(os.path.join(data_path, 'parsec_files'), file_ending='dat')
+        self.distance_handler = Distance(use_grp=use_grp, data=data, **kwargs)
         self.bounds = self.auto_bounds()
         self.kroupa_imf = imf.Kroupa()
         # Define optimization function

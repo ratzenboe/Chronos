@@ -18,13 +18,14 @@ class ChronosSkewCauchyBayesCombined(ChronosBaseCombined):
         feh_range = (np.min(self.isochrone_handler.unique_metallicity), np.max(self.isochrone_handler.unique_metallicity))
         av_range = (0, 3)
         # Set ranges on binary parameters
-        skewness_range = (0.2, 0.8)
+        skewness_range_bprp = (0.2, 0.8)
+        skewness_range_grp = (0.2, 0.8)
         scale_range_bprp = (0.01, 0.1)
         scale_range_grp = (0.0, 0.03)
-        return logAge_range, feh_range, av_range, skewness_range, scale_range_bprp, scale_range_grp
+        return logAge_range, feh_range, av_range, skewness_range_bprp, skewness_range_grp, scale_range_bprp, scale_range_grp
 
     def set_bounds(self, logAge_range=None, feh_range=None, av_range=None,
-                   skewness_range=None, scale_range_bprp=None, scale_range_grp=None):
+                   skewness_range_bprp=None, skewness_range_grp=None, scale_range_bprp=None, scale_range_grp=None):
         """Update set_bounds function"""
         if logAge_range is None:
             logAge_range = (np.min(self.isochrone_handler.unique_ages), np.max(self.isochrone_handler.unique_ages))
@@ -35,20 +36,24 @@ class ChronosSkewCauchyBayesCombined(ChronosBaseCombined):
         if av_range is None:
             av_range = (0, 3)
         # Set ranges on skewness and scale parameters
-        if skewness_range is None:
-            skewness_range = (0.2, 0.8)
+        if skewness_range_bprp is None:
+            skewness_range_bprp = (0.2, 0.8)
+        if skewness_range_grp is None:
+            skewness_range_grp = (0.2, 0.8)
         if scale_range_bprp is None:
             scale_range_bprp = (0.01, 0.1)
         if scale_range_grp is None:
             scale_range_grp = (0.0, 0.03)
         # Set bounds
-        self.bounds = (logAge_range, feh_range, av_range, skewness_range, scale_range_bprp, scale_range_grp)
+        self.bounds = (logAge_range, feh_range, av_range,
+                       skewness_range_bprp, skewness_range_grp, scale_range_bprp, scale_range_grp)
         return
 
     def log_likelihood(self, theta):
-        logAge, feh, A_V, skewness, scale_bprp, scale_grp = theta
+        logAge, feh, A_V, skewness_bprp, skewness_grp, scale_bprp, scale_grp = theta
         ll_tot = 0
-        for g_rp, scale in zip([False, True], [scale_bprp, scale_grp]):
+        # for g_rp, skewness, scale in zip([False, True], [skewness_bprp, skewness_grp], [scale_bprp, scale_grp]):
+        for g_rp, skewness, scale in zip([True, False], [skewness_grp, skewness_bprp], [scale_grp, scale_bprp]):
             # Compute distances to isochrone
             dist_total, masses, keep2fit = self.compute_fit_info(
                 logAge=logAge, feh=feh, A_V=A_V, g_rp=g_rp, signed_distance=True
@@ -67,7 +72,8 @@ class ChronosSkewCauchyBayesCombined(ChronosBaseCombined):
                 skewness=skewness,
                 scale=scale
             )
-            ll_tot += ll
+            # ll_tot += ll  # /np.sum(keep2fit)
+            ll_tot += ll  # ll_tot = g_rp
         return ll_tot
 
     def compute_log_likelihood(self, x_data, skewness=0.5, scale=0.04):
@@ -84,11 +90,11 @@ class ChronosSkewCauchyBayesCombined(ChronosBaseCombined):
 
     def log_prior(self, theta):
         # Uniform priors
-        logAge, feh, A_V, skewness, scale_bprp, scale_grp = theta
-        logAge_range, feh_range, av_range, skewness_range, scale_range_bprp, scale_range_grp = self.bounds
+        logAge, feh, A_V, skewness_bprp, skewness_grp, scale_bprp, scale_grp = theta
+        logAge_range, feh_range, av_range, skewness_range_bprp, skewness_range_grp, scale_range_bprp, scale_range_grp = self.bounds
         if isin_range(logAge, *logAge_range) and isin_range(feh, *feh_range) and isin_range(A_V, *av_range) and \
-                isin_range(skewness, *skewness_range) and isin_range(scale_bprp, *scale_range_bprp) and \
-                isin_range(scale_grp, *scale_range_grp):
+                isin_range(skewness_bprp, *skewness_range_bprp) and isin_range(skewness_grp, *skewness_range_grp) and \
+                isin_range(scale_bprp, *scale_range_bprp) and isin_range(scale_grp, *scale_range_grp):
             return 0.0
         return -np.inf
 
