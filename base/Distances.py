@@ -1,8 +1,7 @@
 import numpy as np
-from ml_fitting.DataManager import PhotManager
+from base.DataManager import PhotManager
 from utils.utils import chunks
 import multiprocessing
-from numba import jit
 import copy
 from scipy.stats import triang
 

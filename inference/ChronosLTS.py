@@ -1,5 +1,5 @@
 import numpy as np
-from ml_fitting.ChronosBase import ChronosBase
+from base.ChronosBase import ChronosBase
 
 
 class ChronosLTS(ChronosBase):

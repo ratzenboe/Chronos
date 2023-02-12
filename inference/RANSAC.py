@@ -1,6 +1,6 @@
 import numpy as np
 from shapely.geometry.polygon import LineString
-from ml_fitting.Distances import lineseg_dists
+from base.Distances import lineseg_dists
 from scipy import stats
 
 

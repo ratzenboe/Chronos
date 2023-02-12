@@ -1,5 +1,5 @@
 import numpy as np
-from ml_fitting.ChronosBaseCombined import ChronosBaseCombined
+from base.ChronosBaseCombined import ChronosBaseCombined
 from utils.utils import isin_range
 import scipy.stats as st
 import emcee

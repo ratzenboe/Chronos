@@ -1,5 +1,5 @@
 import numpy as np
-from ml_fitting.ChronosBase import ChronosBase
+from base.ChronosBase import ChronosBase
 from ml_fitting.RANSAC import RansacIsochrone
 
 

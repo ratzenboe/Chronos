@@ -1,18 +1,18 @@
 import numpy as np
 from isochrone.PARSEC import PARSEC
 from isochrone.Baraffe15 import Baraffe15
-from ml_fitting.Distances import Distance
+from base.DistancesCombined import DistanceCombined
 from utils.utils import isin_range
 import imf
 from skopt import gp_minimize
 import os
 
-data_path = '/home/sebastian/Documents/projects/Chronos/data/'
+data_path = '/data/'
 
 
-class ChronosBase:
-    def __init__(self, data, models='parsec', use_grp=False, **kwargs):
-        self.use_grp = use_grp
+class ChronosBaseCombined:
+    def __init__(self, data, models='parsec', **kwargs):
+        # Set fitting kwargs
         self.fitting_kwargs = dict(
             fit_range=(-2, 10), do_mass_normalize=False, weights=None
         )
@@ -23,16 +23,15 @@ class ChronosBase:
         # Fail save is always PARSEC isochrones
         else:
             self.isochrone_handler = PARSEC(os.path.join(data_path, 'parsec_files'), file_ending='dat')
-        self.distance_handler = Distance(use_grp=use_grp, data=data, **kwargs)
+        # Instantiate distance handler
+        self.distance_handler = DistanceCombined(data=data, **kwargs)
         self.bounds = self.auto_bounds()
         self.kroupa_imf = imf.Kroupa()
         # Define optimization function
         self.optimize_function = None
 
-    def update_data(self, data, use_grp=None, **kwargs):
-        if use_grp is None:
-            use_grp = self.use_grp
-        self.distance_handler = Distance(use_grp=use_grp, data=data, **kwargs)
+    def update_data(self, data, **kwargs):
+        self.distance_handler = DistanceCombined(data=data, **kwargs)
 
     def set_bounds(self, logAge_range=None, feh_range=None, av_range=None):
         if logAge_range is None:
@@ -61,8 +60,8 @@ class ChronosBase:
 
     def keep_data(self, iso_coords):
         iso_range = np.min(iso_coords[:, 1]), np.max(iso_coords[:, 1])
-        isin_magg_range = isin_range(self.distance_handler.fit_data['hrd'][:, 1], *self.fitting_kwargs['fit_range'])
-        isin_iso_range = isin_range(self.distance_handler.fit_data['hrd'][:, 1], *iso_range)
+        isin_magg_range = isin_range(self.distance_handler.fit_data['hrd'][:, 2], *self.fitting_kwargs['fit_range'])
+        isin_iso_range = isin_range(self.distance_handler.fit_data['hrd'][:, 2], *iso_range)
         keep2fit = isin_magg_range & isin_iso_range
         return keep2fit
 
@@ -71,15 +70,15 @@ class ChronosBase:
         # Get isochrone
         iso_coords = self.isochrone_handler.model(logAge, feh, A_V, g_rp=g_rp)
         # Get the distance to the isochrone
-        near_pt_on_isochrone = self.distance_handler.nearest_points(iso_coords)
-        distances_vec = self.distance_handler.fit_data['hrd'] - near_pt_on_isochrone
+        near_pt_on_isochrone = self.distance_handler.nearest_points(iso_coords, g_rp=g_rp)
+        distances_vec = self.distance_handler.cmd_data(g_rp=g_rp) - near_pt_on_isochrone
         # Minimize distance between photometric measurements and isochrones
         dist_color, dist_magg = distances_vec.T
-        # Divide by errors
-        if not signed_distance:
-            # Don't want signed distance to be penalized
-            dist_color /= self.distance_handler.fit_data['hrd_err'][:, 0]
-            dist_magg /= self.distance_handler.fit_data['hrd_err'][:, 1]
+        # # Divide by errors
+        # if not signed_distance:
+        #     # Don't want signed distance to be penalized
+        #     dist_color /= self.distance_handler.fit_data['hrd_err'][:, 0]
+        #     dist_magg /= self.distance_handler.fit_data['hrd_err'][:, 1]
         # Square values and add weight influence
         dist_total = np.sqrt(dist_color**2 + dist_magg**2)
         if signed_distance:
