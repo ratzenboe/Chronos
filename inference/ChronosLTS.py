@@ -3,11 +3,11 @@ from base.ChronosBase import ChronosBase
 
 
 class ChronosLTS(ChronosBase):
-    def __init__(self, data, isochrone_files_base_path, file_ending, **kwargs):
+    def __init__(self, data, **kwargs):
         # Update fitting kwargs
         frac_lts = kwargs.pop('frac_lts', 0.8)
         # Initialize super class
-        super().__init__(data, isochrone_files_base_path, file_ending, **kwargs)
+        super().__init__(data, **kwargs)
         # Update optimize function
         self.optimize_function = self.isochrone_data_distances
         # set frac_lts

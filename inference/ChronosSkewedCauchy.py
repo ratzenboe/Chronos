@@ -18,12 +18,12 @@ def loglikelihood(x_data, weights, skewness=0.5, scale=0.04):
 
 
 class ChronosSkewCauchy(ChronosBase):
-    def __init__(self, data, isochrone_files_base_path, file_ending, **kwargs):
+    def __init__(self, data, **kwargs):
         # Update fitting kwargs
         skewness = kwargs.pop('skewness', 0.5)
         scale = kwargs.pop('scale', 0.04)
         # Initialize super class
-        super().__init__(data, isochrone_files_base_path, file_ending, **kwargs)
+        super().__init__(data, **kwargs)
         # Update optimize function
         self.optimize_function = self.isochrone_data_distances
         # set skewness

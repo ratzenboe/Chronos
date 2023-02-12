@@ -31,9 +31,9 @@ def binary_fraction(mass, scale=1):
 
 
 class ChronosTdist(ChronosBase):
-    def __init__(self, data, isochrone_files_base_path, file_ending, **kwargs):
+    def __init__(self, data, **kwargs):
         # Initialize super class
-        super().__init__(data, isochrone_files_base_path, file_ending, **kwargs)
+        super().__init__(data, **kwargs)
         # Update optimize function
         self.optimize_function = self.isochrone_data_distances
 

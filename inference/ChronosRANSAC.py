@@ -4,12 +4,12 @@ from base.RANSAC import RansacIsochrone
 
 
 class ChronosRANSAC(ChronosBase):
-    def __init__(self, data, isochrone_files_base_path, file_ending, **kwargs):
+    def __init__(self, data, **kwargs):
         shift_x = kwargs.get('shift_x', 0.1)
         shift_y = kwargs.get('shift_y', -0.75)
         self.fitter = RansacIsochrone(shift_x=shift_x, shift_y=shift_y)
         # Initialize super class
-        super().__init__(data, isochrone_files_base_path, file_ending, **kwargs)
+        super().__init__(data, **kwargs)
         # Update optimize function
         self.optimize_function = self.count_inside
 
