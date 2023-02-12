@@ -1,6 +1,6 @@
 import numpy as np
 from base.ChronosBase import ChronosBase
-from ml_fitting.RANSAC import RansacIsochrone
+from base.RANSAC import RansacIsochrone
 
 
 class ChronosRANSAC(ChronosBase):
@@ -37,7 +37,7 @@ class ChronosRANSAC(ChronosBase):
                 near_pt_on_isochrone[keep2fit], logAge, feh, A_V, g_rp=self.use_grp
             )
             # We multiply each distance by the inverse of its likelihood
-            weights = 1 / self.kroupa_imf(masses)
+            # weights = 1 / self.kroupa_imf(masses)
 
         # Compute MSAC (M-Estimator SAmple Consensus) score
         # Score is the sum of the weights of the inliers

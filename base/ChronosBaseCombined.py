@@ -3,7 +3,7 @@ from isochrone.PARSEC import PARSEC
 from isochrone.Baraffe15 import Baraffe15
 from base.DistancesCombined import DistanceCombined
 from utils.utils import isin_range
-import imf
+# import imf
 from skopt import gp_minimize
 import os
 
@@ -26,7 +26,7 @@ class ChronosBaseCombined:
         # Instantiate distance handler
         self.distance_handler = DistanceCombined(data=data, **kwargs)
         self.bounds = self.auto_bounds()
-        self.kroupa_imf = imf.Kroupa()
+        # self.kroupa_imf = imf.Kroupa()
         # Define optimization function
         self.optimize_function = None
 

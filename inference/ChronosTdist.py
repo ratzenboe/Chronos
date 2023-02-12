@@ -82,9 +82,9 @@ class ChronosTdist(ChronosBase):
         )
         # -- compute fitting weights --
         weights = np.ones_like(masses)
-        if self.fitting_kwargs['do_mass_normalize']:
+        # if self.fitting_kwargs['do_mass_normalize']:
             # We multiply each distance by the inverse of its likelihood
-            weights = 1 / self.kroupa_imf(masses)
+            # weights = 1 / self.kroupa_imf(masses)
             # weights = self.kroupa_imf(masses)
         if self.fitting_kwargs['weights'] is not None:
             weights *= self.fitting_kwargs['weights'][self.distance_handler.is_not_nan]
