@@ -38,7 +38,7 @@ def lineseg_dists(points, a, b):
     dists = np.hypot(h, c)
     # Get closest line segment
     is_closest = np.argmin(dists, axis=1)
-    # Compute point on line segment that is closest to input points
+    # Compute point on the line segment that is closest to input points
     closest_points = a[is_closest] - d[is_closest] * np.expand_dims(s[np.arange(len(s)), is_closest], axis=1)
     return closest_points
 

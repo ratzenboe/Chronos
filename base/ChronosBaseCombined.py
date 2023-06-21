@@ -7,7 +7,7 @@ from utils.utils import isin_range
 from skopt import gp_minimize
 import os
 
-data_path = '/data/'
+data_path = '/Users/ratzenboe/Documents/work/code/Chronos/data/'
 
 
 class ChronosBaseCombined:

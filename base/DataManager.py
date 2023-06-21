@@ -3,16 +3,20 @@ import numpy as np
 
 class PhotManager:
     """Handling Gaia (E)DR3 photometric system"""
-    def __init__(self, data,
+    def __init__(self, data, abs_Gmag_name='abs_Gmag', color_bprp_name='color_bprp', color_grp_name='color_grp',
                  mag_g_name='phot_g_mean_mag', mag_bp_name='phot_bp_mean_mag', mag_rp_name='phot_rp_mean_mag',
                  flux_g_name='phot_g_mean_flux', flux_g_error_name='phot_g_mean_flux_error',
                  flux_bp_name='phot_bp_mean_flux', flux_bp_error_name='phot_bp_mean_flux_error',
                  flux_rp_name='phot_rp_mean_flux', flux_rp_error_name='phot_rp_mean_flux_error',
                  parallax_name='parallax', parallax_error_name='parallax_error'
                  ):
+        """Initialize the photometric manager"""
+        self.abs_Gmag = None
+        self.color_bprp = None
+        self.color_grp = None
         # Save data and rename columns
         data_processed, compute_errors, columns2rename = self.input_handler(
-            data,
+            data, abs_Gmag_name=abs_Gmag_name, color_bprp_name=color_bprp_name, color_grp_name=color_grp_name,
             phot_g_mean_mag=mag_g_name, phot_bp_mean_mag=mag_bp_name, phot_rp_mean_mag=mag_rp_name,
             phot_g_mean_flux=flux_g_name, phot_g_mean_flux_error=flux_g_error_name,
             phot_bp_mean_flux=flux_bp_name, phot_bp_mean_flux_error=flux_bp_error_name,
@@ -20,9 +24,13 @@ class PhotManager:
             parallax=parallax_name, parallax_error=parallax_error_name
         )
         self.data = data_processed.rename(columns=columns2rename)
-        self.abs_Gmag = (self.data['phot_g_mean_mag'] + 5*np.log10(self.data['parallax']) - 10).values
-        self.color_bprp = self.data['phot_bp_mean_mag'].values - self.data['phot_rp_mean_mag'].values
-        self.color_grp = self.data['phot_g_mean_mag'].values - self.data['phot_rp_mean_mag'].values
+        if self.abs_Gmag is None:
+            self.abs_Gmag = (self.data['phot_g_mean_mag'] + 5*np.log10(self.data['parallax']) - 10).values
+        if self.color_bprp is None:
+            self.color_bprp = self.data['phot_bp_mean_mag'].values - self.data['phot_rp_mean_mag'].values
+        if self.color_grp is None:
+            self.color_grp = self.data['phot_g_mean_mag'].values - self.data['phot_rp_mean_mag'].values
+
         if compute_errors:
             # Compute uncertainties in HRD axes
             e_Gmag, e_GBPmag, e_GRPmag = self.compute_mag_errors()
@@ -33,11 +41,19 @@ class PhotManager:
         else:
             self.e_abs_Gmag = self.e_color_bprp = self.e_color_grp = np.ones_like(self.abs_Gmag)
 
-    def input_handler(self, data, **kwargs):
+    def input_handler(self, data, abs_Gmag_name, color_bprp_name, color_grp_name, **kwargs):
+        # Test if HRD columns are in data
+        if abs_Gmag_name in data.columns:
+            self.abs_Gmag = data[abs_Gmag_name].values
+        if color_bprp_name in data.columns:
+            self.color_bprp = data[color_bprp_name].values
+        if color_grp_name in data.columns:
+            self.color_grp = data[color_grp_name].values
+        # Test if other columns are in data
         all_cols_in_data = True
         column_map = {}
         for colname, target_name in kwargs.items():
-            if colname in data.columns:
+            if target_name in data.columns:
                 column_map[target_name] = colname
             else:
                 all_cols_in_data = False
