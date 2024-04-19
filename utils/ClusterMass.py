@@ -14,8 +14,13 @@ class MassFitter:
         self.n_draws = n_draws
         self.mass_range = mass_range
 
-    def compute_observed_hist(self):
-        hist, edges = np.histogram(self.observed_masses, bins=self.bins)
+    def compute_observed_hist(self, bootstrap=False):
+        if bootstrap:
+            n_samples = len(self.observed_masses)
+            idx = np.random.choice(range(n_samples), size=n_samples, replace=True)
+            hist, edges = np.histogram(self.observed_masses[idx], bins=self.bins)
+        else:
+            hist, edges = np.histogram(self.observed_masses, bins=self.bins)
         return hist
 
     def set_observed_masses(self, observed_masses):
@@ -51,8 +56,8 @@ class MassFitter:
         chi2_res = [self.chi2_cluster_mass(mass_i, observed_masses_binned) for mass_i in mass_grid]
         return mass_grid[np.argmin(chi2_res)], np.diff(mass_grid)[0]
 
-    def fit(self, n_iter=5, n_grid_pts=5):
-        observed_masses_binned = self.compute_observed_hist()
+    def fit(self, n_iter=5, n_grid_pts=5, bootstrap=False):
+        observed_masses_binned = self.compute_observed_hist(bootstrap=bootstrap)
         # chi2_vec = np.vectorize(self.chi2_cluster_mass)
         mass_lo, mass_hi = self.mass_range
         for _ in range(n_iter):
