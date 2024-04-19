@@ -25,15 +25,18 @@ class ExtinctionPrior:
         else:
             raise ValueError('Input should be a DataFrame, Series, list, or numpy array')
 
-    def compute_prior(self, ra, dec, plx):
+    def compute_prior(self, ra, dec, plx=None, distance=None):
         ra = self.check_input(ra)
         dec = self.check_input(dec)
-        plx = self.check_input(plx)
+        if plx is None:
+            distance = self.check_input(distance)
+        else:
+            distance = 1000/self.check_input(plx)
         # Build skycoord object
         c = SkyCoord(
             ra=ra * u.deg,
             dec=dec * u.deg,
-            distance=1000/plx * u.pc,
+            distance=distance * u.pc,
             frame='icrs'
         )
         E = self.edh_dustmap.query(c)
