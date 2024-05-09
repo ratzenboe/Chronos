@@ -1,6 +1,7 @@
 import numpy as np
 from isochrone.PARSEC import PARSEC
 from isochrone.Baraffe15 import Baraffe15
+from isochrone.Dartmouth import Dartmouth
 from base.Distances import Distance
 from utils.utils import isin_range
 # import imf
@@ -19,6 +20,9 @@ class ChronosBase:
         # Check for Baraffe15 isochrones
         if ('baraffe' in models.lower()) or ('bhac' in models.lower()):
             self.isochrone_handler = Baraffe15(os.path.join(data_path, 'baraffe_files'), file_ending='GAIA')
+            self.fitting_kwargs['fit_range'] = (-2, 12)
+        elif 'dartmouth' in models.lower():
+            self.isochrone_handler = Dartmouth(os.path.join(data_path, 'dartmouth_files'), file_ending='Gaia')
             self.fitting_kwargs['fit_range'] = (-2, 12)
         # Fail save is always PARSEC isochrones
         else:
